@@ -66,6 +66,7 @@ class SupabaseStore:
         if not config.supabase_key.startswith("sb_secret_"):
             self.headers["Authorization"] = "Bearer " + config.supabase_key
 
+    
     async def rpc(self, name, args=None):
         try:
             response = await self.client.post(
@@ -75,14 +76,11 @@ class SupabaseStore:
             )
 
             if response.is_error:
-                # Diagnostic logging for the administrator.
-                # Do not log request headers or API keys.
                 print(
                     f"Supabase RPC {name} failed: "
                     f"HTTP {response.status_code}: "
-                    f"{response.text[:1000]}"
+                    f"{response.text[:2000]}"
                 )
-
                 raise Problem(
                     503,
                     "database_unavailable",
@@ -95,9 +93,11 @@ class SupabaseStore:
         except Problem:
             raise
 
-        except (httpx.HTTPError, ValueError):
-            print(f"Supabase RPC {name} failed due to a request or JSON error.")
-
+        except (httpx.HTTPError, ValueError) as exc:
+            print(
+                f"Supabase RPC {name} request/response error: "
+                f"{type(exc).__name__}: {str(exc)[:1000]}"
+            )
             raise Problem(
                 503,
                 "database_unavailable",
