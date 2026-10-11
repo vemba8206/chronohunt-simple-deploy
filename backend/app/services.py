@@ -1,3 +1,4 @@
+
 import httpx
 
 from .domain import Problem, inspect_sheet, parse_sheet
@@ -16,19 +17,30 @@ class SheetClient:
                     follow_redirects=True,
                 )
             else:
-                response = await self.client.get(self.config.sheet_url, follow_redirects=True)
-            if response.status_code != 200 or "json" not in response.headers.get("content-type", ""):
+                response = await self.client.get(
+                    self.config.sheet_url,
+                    follow_redirects=True,
+                )
+
+            if (
+                response.status_code != 200
+                or "json" not in response.headers.get("content-type", "")
+            ):
                 raise Problem(
                     502,
                     "sheet_access",
-                    "Backend cannot access Sheet JSON. Check the Apps Script deployment access; Only myself requires Google login.",
+                    "Backend cannot access Sheet JSON. Check the Apps Script "
+                    "deployment access; Only myself requires Google login.",
                 )
+
             return response.json()
-        except httpx.HTTPError, ValueError:
+
+        except (httpx.HTTPError, ValueError):
             raise Problem(
                 502,
                 "sheet_unavailable",
-                "Sheet request failed or returned non-JSON data. Check deployment access and connectivity.",
+                "Sheet request failed or returned non-JSON data. "
+                "Check deployment access and connectivity.",
             ) from None
 
     async def fetch(self):
@@ -42,28 +54,50 @@ class SupabaseStore:
     """PostgREST RPC uses the existing project; every mutation is a DB transaction."""
 
     def __init__(self, config, client):
-        self.url, self.client = config.supabase_url + "/rest/v1", client
+        self.url = config.supabase_url + "/rest/v1"
+        self.client = client
         self.headers = {
             "apikey": config.supabase_key,
             "Content-Type": "application/json",
         }
-        # Legacy JWT service-role keys require Authorization; new sb_secret keys use apikey.
+
+        # Legacy JWT service-role keys require Authorization;
+        # new sb_secret keys use apikey.
         if not config.supabase_key.startswith("sb_secret_"):
             self.headers["Authorization"] = "Bearer " + config.supabase_key
 
     async def rpc(self, name, args=None):
         try:
             response = await self.client.post(
-                self.url + "/rpc/" + name, headers=self.headers, json=args or {}
+                self.url + "/rpc/" + name,
+                headers=self.headers,
+                json=args or {},
             )
+
             if response.is_error:
+                # Diagnostic logging for the administrator.
+                # Do not log request headers or API keys.
+                print(
+                    f"Supabase RPC {name} failed: "
+                    f"HTTP {response.status_code}: "
+                    f"{response.text[:1000]}"
+                )
+
                 raise Problem(
                     503,
                     "database_unavailable",
-                    "Database operation failed. Administrator: verify credentials, schema and SQL migration.",
+                    "Database operation failed. Administrator: verify "
+                    "credentials, schema and SQL migration.",
                 )
+
             return response.json()
-        except httpx.HTTPError, ValueError:
+
+        except Problem:
+            raise
+
+        except (httpx.HTTPError, ValueError):
+            print(f"Supabase RPC {name} failed due to a request or JSON error.")
+
             raise Problem(
                 503,
                 "database_unavailable",
@@ -80,13 +114,20 @@ class SupabaseStore:
             raise Problem(
                 503,
                 "integrity_update_required",
-                "Administrator: the registration-integrity SQL update is unavailable. Review the focused update and database access before competition writes.",
+                "Administrator: the registration-integrity SQL update is "
+                "unavailable. Review the focused update and database access "
+                "before competition writes.",
             ) from None
-        if not isinstance(result, dict) or result.get("registration_integrity") != 3:
+
+        if (
+            not isinstance(result, dict)
+            or result.get("registration_integrity") != 3
+        ):
             raise Problem(
                 503,
                 "integrity_update_required",
-                "Administrator: review and apply the focused registration-integrity SQL update before competition writes.",
+                "Administrator: review and apply the focused "
+                "registration-integrity SQL update before competition writes.",
             )
 
     async def policy_ready(self):
@@ -104,7 +145,10 @@ class SupabaseStore:
 
     async def submit(self, team_id, code):
         await self.require_integrity()
-        return await self.rpc("ch_submit", {"p_team_id": team_id, "p_code": code})
+        return await self.rpc(
+            "ch_submit",
+            {"p_team_id": team_id, "p_code": code},
+        )
 
     async def sync(self, rows):
         await self.require_integrity()
@@ -123,9 +167,14 @@ class SupabaseStore:
 
     async def teams(self, offset=0):
         rows = await self.rpc("ch_teams", {"p_offset": offset})
+
         return [
             {
-                ("website_submission_timestamp" if key == "tinkercad_timestamp" else key): value
+                (
+                    "website_submission_timestamp"
+                    if key == "tinkercad_timestamp"
+                    else key
+                ): value
                 for key, value in row.items()
             }
             for row in rows
@@ -147,23 +196,41 @@ def check_result(result):
                 422,
                 "Choose a future deadline with an explicit timezone.",
             ),
-            "round_closed": (409, "The round has ended. New submissions are closed."),
+            "round_closed": (
+                409,
+                "The round has ended. New submissions are closed.",
+            ),
             "unknown_team": (
                 404,
-                "Team ID is not registered. Complete the Google Form first, then wait for registration synchronization.",
+                "Team ID is not registered. Complete the Google Form first, "
+                "then wait for registration synchronization.",
             ),
             "duplicate_submission": (
                 409,
                 "A successful submission has already been recorded for this team.",
             ),
-            "round_active": (409, "End the round before finalizing."),
+            "round_active": (
+                409,
+                "End the round before finalizing.",
+            ),
             "registration_timestamp_conflict": (
                 409,
-                "A Sheet registration timestamp differs from its stored original value. Review the source before synchronizing; no records were changed.",
+                "A Sheet registration timestamp differs from its stored "
+                "original value. Review the source before synchronizing; "
+                "no records were changed.",
             ),
-            "invalid_code": (422, "Enter a nonempty PIN of at most 256 characters."),
+            "invalid_code": (
+                422,
+                "Enter a nonempty PIN of at most 256 characters.",
+            ),
         }
+
         code = result["error"]
-        status, message = errors.get(code, (503, "Competition operation could not be completed."))
+        status, message = errors.get(
+            code,
+            (503, "Competition operation could not be completed."),
+        )
+
         raise Problem(status, code, message)
+
     return result
