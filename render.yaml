@@ -4,7 +4,7 @@
       "type": "web",
       "name": "chronohunt-simple-api",
       "runtime": "python",
-      "plan": "0.5c-512mb",
+      "plan": "free",
       "rootDir": "backend",
       "numInstances": 1,
       "autoDeployTrigger": "off",
