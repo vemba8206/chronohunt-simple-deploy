@@ -1,9 +1,12 @@
-
 {
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://chronohunt-simple-api.onrender.com/api/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
     }
   ]
 }
