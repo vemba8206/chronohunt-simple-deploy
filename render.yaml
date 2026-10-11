@@ -1,0 +1,58 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "chronohunt-simple-api",
+      "runtime": "python",
+      "plan": "0.5c-512mb",
+      "rootDir": "backend",
+      "numInstances": 1,
+      "autoDeployTrigger": "off",
+      "buildCommand": "pip install -r requirements.txt",
+      "startCommand": "python -m uvicorn app.asgi:app --host 0.0.0.0 --port \"$PORT\" --workers 1 --proxy-headers --forwarded-allow-ips \"$FORWARDED_ALLOW_IPS\"",
+      "healthCheckPath": "/api/health",
+      "envVars": [
+        {
+          "key": "PYTHON_VERSION",
+          "value": "3.14.3"
+        },
+        {
+          "key": "COOKIE_SECURE",
+          "value": "true"
+        },
+        {
+          "key": "COOKIE_SAMESITE",
+          "value": "lax"
+        },
+        {
+          "key": "SESSION_TTL_SECONDS",
+          "value": "3600"
+        },
+        {
+          "key": "SUPABASE_URL",
+          "sync": false
+        },
+        {
+          "key": "SUPABASE_SECRET_KEY",
+          "sync": false
+        },
+        {
+          "key": "ADMIN_PASSWORD",
+          "sync": false
+        },
+        {
+          "key": "SESSION_SECRET",
+          "sync": false
+        },
+        {
+          "key": "CORS_ORIGINS",
+          "sync": false
+        },
+        {
+          "key": "FORWARDED_ALLOW_IPS",
+          "sync": false
+        }
+      ]
+    }
+  ]
+}
