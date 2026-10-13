@@ -78,7 +78,7 @@ function Participant({ round, reload }: { round: RoundStatus | null; reload: () 
 
         <form onSubmit={submit} className="submission-form">
 
-          <label htmlFor="team">TEAM ID <span>YOUR TEAM IDENTIFIER</span></label><div className="input-wrap"><input id="team" name="team_id" placeholder="e.g. CH01" value={team} onChange={e => setTeam(e.target.value)} onBlur={() => setTeam(normalizeTeam(team))} maxLength={32} required autoComplete="off" autoCapitalize="characters" spellCheck={false} disabled={busy} /><BadgeCheck size={19} aria-hidden="true" /></div>
+          <label htmlFor="team">TEAM ID <span>YOUR TEAM IDENTIFIER</span></label><div className="input-wrap"><input id="team" name="team_id" placeholder="TECHTEAM***" value={team} onChange={e => setTeam(e.target.value)} onBlur={() => setTeam(normalizeTeam(team))} maxLength={32} required autoComplete="off" autoCapitalize="characters" spellCheck={false} disabled={busy} /><BadgeCheck size={19} aria-hidden="true" /></div>
 
           <label htmlFor="code">PIN <span>CIRCUIT PIN</span></label><div className="input-wrap"><input id="code" name="code" placeholder="Enter your circuit PIN" value={code} onChange={e => setCode(e.target.value)} required maxLength={256} autoComplete="off" spellCheck={false} disabled={busy} /><KeyRound size={19} aria-hidden="true" /></div>
 
@@ -208,7 +208,7 @@ export default function App() {
 
   useEffect(() => { void reload(); const timer = window.setInterval(() => { if (!document.hidden) void reload() }, 10000); return () => window.clearInterval(timer) }, [reload])
 
-  return <div className="app-shell"><a className="skip-link" href="#content">Skip to content</a><header><Link to="/" className="brand"><Logo /><span>CHRONOHUNT</span><span className="round-tag">ROUND 2</span></Link>{location.pathname !== '/' && <Link className="text-button" to="/">Participant portal</Link>}<div className="header-status"><StatusPill round={round} /></div></header><div id="content"><Routes><Route path="/" element={<Participant round={round} reload={reload} />} /><Route path="/admin" element={<Organizer reload={reload} />} /><Route path="/leaderboard" element={<Organizer reload={reload} />} /><Route path="*" element={<main className="empty"><h1>Page not found</h1><Link to="/">Return to submission</Link></main>} /></Routes></div><footer><span>CHRONOHUNT <b> / </b> THE CLOCK IS PART OF THE CHALLENGE.</span><span>ROUND 02 <b>·</b> TINKERCAD CHALLENGE</span></footer></div>
+  return <div className="app-shell"><a className="skip-link" href="#content">Skip to content</a><header><Link to="/" className="brand"><Logo /><span className="round-tag">ROUND 2</span></Link>{location.pathname !== '/' && <Link className="text-button" to="/">Participant portal</Link>}<div className="header-status"><StatusPill round={round} /></div></header><div id="content"><Routes><Route path="/" element={<Participant round={round} reload={reload} />} /><Route path="/admin" element={<Organizer reload={reload} />} /><Route path="/leaderboard" element={<Organizer reload={reload} />} /><Route path="*" element={<main className="empty"><h1>Page not found</h1><Link to="/">Return to submission</Link></main>} /></Routes></div><footer><span>CHRONOHUNT <b> / </b> THE CLOCK IS PART OF THE CHALLENGE.</span><span>ROUND 02 <b>·</b> TINKERCAD CHALLENGE</span></footer></div>
 
 }
 
